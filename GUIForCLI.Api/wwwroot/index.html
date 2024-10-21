@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap Form</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #output {
+            max-height: 400px; /* Set the maximum height for the container */
+            overflow-y: auto; /* Add a vertical scrollbar for overflow content */
+        }
+
+        .outputContainer {
+            background-color: black;
+            color: forestgreen;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6 border">
+                <form class="m-2" id="cliForm">
+                    <div class="mb-3 p-2">
+                        <label for="commandField" class="form-label">Input Field</label>
+                        <input type="text" class="form-control" id="commandField" value="wmic logicaldisk get caption, freespace" placeholder="Enter text here">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Execute</button>
+                </form>
+                <div id="driveCards"></div>
+            </div>
+            <div class="col-md-6 border outputContainer">
+                <div class="m-2">
+                    <pre class="dk" id="output">init.</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 border">
+                <form class="m-2" id="diskForm">
+                    <button type="submit" class="btn btn-primary">Get Disks</button>
+                </form>
+                <div id="driveCards2"></div>
+            </div>
+            <div class="col-md-6 border outputContainer">
+                <div class="m-2">
+                    <pre class="dk" id="output">init.</pre>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <script>
+        const form = document.getElementById('cliForm');
+        const form2 = document.getElementById('diskForm');
+
+        const output = document.getElementById('output');
+        const commandField = document.getElementById('commandField');
+        const driveCardsContainer = document.getElementById("driveCards");
+        driveCardsContainer.className = 'row';
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            output.innerHTML += '<br>command:' + commandField.value + '<br>';
+            output.innerHTML += `Loading...` + '<br>';
+
+            try {s
+                const response = await axios.post('/api/disk/customtask', { command: commandField.value, arg: "" });
+
+                // Split the response into lines and remove empty lines
+                const lines = response.data.message.split(/[\r\n]+/).filter(line => line.trim() !== '');
+
+                // Join the lines with HTML line breaks
+                const formattedOutput = lines.join('<br>');
+
+                output.innerHTML += formattedOutput;
+                createDriveCards(response.data.data);
+                console.log(response.data);
+            } catch (error) {
+                output.innerHTML += `${error.response.data.message}`;
+                console.log(error.response.data);
+            }
+            finally {
+
+                output.innerHTML += "<br>opertation completed";
+                output.scrollTop = output.scrollHeight;
+            }
+        });
+
+
+        form.addEventListener('submit2', async (e) => {
+            e.preventDefault();
+
+            try {
+
+                const response = await axios.post('/api/disk/disks', { command: commandField.value, arg: "" });
+
+                createDriveCards(response.data.data);
+                console.log(response.data);
+            } catch (error) {
+                console.log(error.response.data);
+            }
+            finally {
+            }
+        });
+
+        function createDriveCards(data) {
+            driveCardsContainer.innerHTML = "";
+
+            data.forEach((driveInfo) => {
+                const card = document.createElement("div");
+                card.className = "col-md-4 pb-2";
+
+                const cardContent = `
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">${driveInfo.drive}</h5>
+                                    <p class="card-text">Size: ${driveInfo.size}</p>
+                                </div>
+                            </div>
+                    `;
+
+                card.innerHTML = cardContent;
+                driveCardsContainer.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
