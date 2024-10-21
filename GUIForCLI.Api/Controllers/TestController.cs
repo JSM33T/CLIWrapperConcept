@@ -46,6 +46,17 @@ namespace GUIForCLI.Api.Controllers
             return Ok(ret);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> LinuxPartitions()
+        {
+             var partitionDetails = LinuxPartitionReader.GetPartitionDetails();
+            foreach (var partition in partitionDetails)
+            {
+                Console.WriteLine($"Name: {partition.Name}, Size: {partition.Size} bytes, Type: {partition.Type}");
+            }
+            return Ok(partitionDetails);
+        }
+
         static List<DiskDriveInfo> ParseDiskDriveInfo(string wmicOutput)
         {
             List<DiskDriveInfo> diskDrives = new List<DiskDriveInfo>();
