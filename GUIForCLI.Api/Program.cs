@@ -1,15 +1,9 @@
-using GUIForCLI.Services;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-
-builder.Services.AddScoped<ICmdService, CmdService>();
-builder.Services.AddScoped<IGitService, GitService>();
-builder.Services.AddScoped<IDiskManagementService, DiskManagementService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

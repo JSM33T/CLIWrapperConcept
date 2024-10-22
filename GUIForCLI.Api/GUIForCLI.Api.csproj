@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GUIForCLI.Parsers\GUIForCLI.Parsers.csproj" />
-    <ProjectReference Include="..\GUIForCLI.Services\GUIForCLI.Services.csproj" />
   </ItemGroup>
 
   <ItemGroup>
