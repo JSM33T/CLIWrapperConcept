@@ -12,8 +12,8 @@ namespace GUIForCLI.Api.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetPhysicalDisks()
         {
-            var result = await Cli.Wrap("bash")
-               .WithArguments("-c sudo lshw -class disk")
+            var result = await Cli.Wrap("sudo")
+               .WithArguments("lshw -class disk")
                .ExecuteBufferedAsync();
 
             var ret = new

@@ -1,135 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bootstrap Form</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        #output {
-            max-height: 400px; /* Set the maximum height for the container */
-            overflow-y: auto; /* Add a vertical scrollbar for overflow content */
-        }
-
-        .outputContainer {
-            background-color: black;
-            color: forestgreen;
-        }
-    </style>
+    <title>Disks Information</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-6 border">
-                <form class="m-2" id="cliForm">
-                    <div class="mb-3 p-2">
-                        <label for="commandField" class="form-label">Input Field</label>
-                        <input type="text" class="form-control" id="commandField" value="wmic logicaldisk get caption, freespace" placeholder="Enter text here">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Execute</button>
-                </form>
-                <div id="driveCards"></div>
-            </div>
-            <div class="col-md-6 border outputContainer">
-                <div class="m-2">
-                    <pre class="dk" id="output">init.</pre>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 border">
-                <form class="m-2" id="diskForm">
-                    <button type="submit" class="btn btn-primary">Get Disks</button>
-                </form>
-                <div id="driveCards2"></div>
-            </div>
-            <div class="col-md-6 border outputContainer">
-                <div class="m-2">
-                    <pre class="dk" id="output">init.</pre>
-                </div>
-            </div>
-        </div>
-
-
+        <h2 class="text-center">Disks</h2>
+        <div class="row" id="disks-container"></div>
     </div>
+    <div class="container mt-5">
+        <h2 class="text-center">Zpools</h2>
+        <div class="row" id="zpools-container"></div>
+    </div>
+    <div class="container mt-5">
+        <h2 class="text-center">Select a Disk</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <select class="form-select" id="disks-dropdown">
+                    <option selected disabled>Select a disk</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-start">
+                <input class="form-input" value="" id="poolName"/>
+            </div>
+            <div class="col-md-4 d-flex align-items-start">
+                <button class="btn btn-primary ms-3">Create Zpool</button>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS and Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <script>
-        const form = document.getElementById('cliForm');
-        const form2 = document.getElementById('diskForm');
-
-        const output = document.getElementById('output');
-        const commandField = document.getElementById('commandField');
-        const driveCardsContainer = document.getElementById("driveCards");
-        driveCardsContainer.className = 'row';
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            output.innerHTML += '<br>command:' + commandField.value + '<br>';
-            output.innerHTML += `Loading...` + '<br>';
-
-            try {s
-                const response = await axios.post('/api/disk/customtask', { command: commandField.value, arg: "" });
-
-                // Split the response into lines and remove empty lines
-                const lines = response.data.message.split(/[\r\n]+/).filter(line => line.trim() !== '');
-
-                // Join the lines with HTML line breaks
-                const formattedOutput = lines.join('<br>');
-
-                output.innerHTML += formattedOutput;
-                createDriveCards(response.data.data);
-                console.log(response.data);
-            } catch (error) {
-                output.innerHTML += `${error.response.data.message}`;
-                console.log(error.response.data);
-            }
-            finally {
-
-                output.innerHTML += "<br>opertation completed";
-                output.scrollTop = output.scrollHeight;
-            }
-        });
+ document.addEventListener("DOMContentLoaded", function() {
+    loadDisks();
+    loadZpools();
+ })
 
 
-        form.addEventListener('submit2', async (e) => {
-            e.preventDefault();
+        function loadDisks() {
+            // API URL
+            const apiUrl = 'http://localhost:5091/api/disk/all';
 
-            try {
+            // Fetch the disks data from the API
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const disks = data.disks;
+                    const container = document.getElementById('disks-container');
+                    const dropdown = document.getElementById('disks-dropdown');
 
-                const response = await axios.post('/api/disk/disks', { command: commandField.value, arg: "" });
+                    // Loop through each disk and create an option for it
+                    disks.forEach(disk => {
+                        const option = document.createElement('option');
+                        option.value = disk.logicalName;  // Set logicalName as value
+                        option.innerHTML = disk.serial + `<pre>` + disk.size + `</pre>`; // Set serial as visible text
+                        dropdown.appendChild(option);
+                    });
+                    // Loop through each disk and create a card for it
+                    disks.forEach(disk => {
+                        const card = `
+            <div class="col-md-4 mb-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">${disk.product}</h5>
+                        <p class="card-text"><strong>Description:</strong> ${disk.description}</p>
+                        <p class="card-text"><strong>Vendor:</strong> ${disk.vendor}</p>
+                        <p class="card-text"><strong>Logical Name:</strong> ${disk.logicalName}</p>
+                        <p class="card-text"><strong>Serial:</strong> ${disk.serial}</p>
+                        <p class="card-text"><strong>Size:</strong> ${disk.size}</p>
+                        <p class="card-text"><strong>Capabilities:</strong> ${disk.capabilities}</p>
+                    </div>
+                </div>
+            </div>`;
+                        container.innerHTML += card;
+                    });
+                })
+                .catch(error => console.error('Error fetching disk data:', error));
 
-                createDriveCards(response.data.data);
-                console.log(response.data);
-            } catch (error) {
-                console.log(error.response.data);
-            }
-            finally {
-            }
-        });
+        }
 
-        function createDriveCards(data) {
-            driveCardsContainer.innerHTML = "";
+        function loadZpools() {
+            // API URL
+            const apiUrl = 'http://localhost:5091/api/zpools/all';
 
-            data.forEach((driveInfo) => {
-                const card = document.createElement("div");
-                card.className = "col-md-4 pb-2";
+            // Fetch the disks data from the API
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const disks = data.disks;
+                    const container = document.getElementById('zpool-container');
 
-                const cardContent = `
+                    // Loop through each disk and create an option for it
+                    disks.forEach(disk => {
+                        const card = `
+                        <div class="col-md-4 mb-2">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5 class="card-title">${driveInfo.drive}</h5>
-                                    <p class="card-text">Size: ${driveInfo.size}</p>
+                                    <h5 class="card-title">${disk.name}</h5>
+                                    <p class="card-text"><strong>Description:</strong> ${disk.size}</p>
+                                    <p class="card-text"><strong>Vendor:</strong> ${disk.allocated}</p>
+                                    <p class="card-text"><strong>Logical Name:</strong> ${disk.capacity}</p>
                                 </div>
                             </div>
-                    `;
+                        </div>`;
+                        container.innerHTML += card;
+                    });
+                })
+                .catch(error => console.error('Error fetching disk data:', error));
 
-                card.innerHTML = cardContent;
-                driveCardsContainer.appendChild(card);
-            });
         }
+
+
+        
+
+        function createZpool() {
+                let selectedDisk = document.getElementById('#disks-dropdown');
+
+                let apiUrl = "const apiUrl = 'http://localhost:5091/api/zpool/remove';" 
+
+                // Check if a disk is selected
+                if (!selectedDisk) {
+                    alert('Please select a disk.');
+                    return;
+                }
+
+                const requestData = {
+                    LogicalName: selectedDisk.value,
+                    PoolName :"sample pool"
+                };
+
+                try {
+                    const response = fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = response.json();
+                    console.log('Zpool created successfully:', result);
+                    alert('Zpool created successfully.');
+                } catch (error) {
+                    console.error('Error creating zpool:', error);
+                }
+        }
+
     </script>
 </body>
+
 </html>

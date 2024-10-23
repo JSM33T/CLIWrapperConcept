@@ -13,8 +13,8 @@ namespace GUIForCLI.Api.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetZpools()
         {
-            var result = await Cli.Wrap("bash")
-               .WithArguments("-c sudo lshw -class disk")
+            var result = await Cli.Wrap("sudo")
+               .WithArguments("zpool list")
                .ExecuteBufferedAsync();
 
             var ret = new
@@ -29,10 +29,10 @@ namespace GUIForCLI.Api.Controllers
         }
 
         [HttpPost("add")]
-        public async Task<IActionResult> Create(AddZpoolReuqest reuqest)
+        public async Task<IActionResult> Create(AddZpoolReuqest request)
         {
-            var result = await Cli.Wrap("bash")
-               .WithArguments($"-c sudo zpool create mypool {reuqest.LogicalName}")
+            var result = await Cli.Wrap("sudo")
+               .WithArguments($"zpool create {request.PoolName} {request.LogicalName}")
                .ExecuteBufferedAsync();
 
             if (result.ExitCode == 0)
@@ -58,17 +58,17 @@ namespace GUIForCLI.Api.Controllers
         }
 
         [HttpPost("remove")]
-        public async Task<IActionResult> Remove(AddZpoolReuqest reuqest)
+        public async Task<IActionResult> Remove(AddZpoolReuqest request)
         {
-            var result = await Cli.Wrap("bash")
-               .WithArguments($"-c sudo zpool destroy -f {reuqest.PoolName}")
+            var result = await Cli.Wrap("sudo")
+               .WithArguments($"zpool destroy -f {request.PoolName}")
                .ExecuteBufferedAsync();
 
             if (result.ExitCode == 0)
             {
                 var ret = new
                 {
-                    message = "Pool created successfully",
+                    message = $"Pool: {request.PoolName} deleted successfully",
                     res = result,
                 };
 
